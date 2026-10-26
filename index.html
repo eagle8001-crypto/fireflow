@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FireFlow - Fire Pump Discharge Pressure Calculator</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts: Inter & Oswald -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Oswald', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              300: '#86efac',
+              400: '#4ade80',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Styling for Pill Selectors and Range Inputs */
+    .btn-pill-active {
+      background-color: #16a34a !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+      border-color: #15803d !important;
+    }
+    
+    .dark .btn-pill-active {
+      background-color: #22c55e !important;
+      color: #052e16 !important;
+      box-shadow: 0 4px 14px rgba(34, 197, 94, 0.4);
+      border-color: #4ade80 !important;
+    }
+
+    /* Custom range slider styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: transparent;
+    }
+    input[type=range]:focus {
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      height: 8px;
+      border-radius: 9999px;
+      background: #e2e8f0;
+    }
+    .dark input[type=range]::-webkit-slider-runnable-track {
+      background: #334155;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 22px;
+      width: 22px;
+      border-radius: 50%;
+      background: #16a34a;
+      cursor: pointer;
+      margin-top: -7px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      transition: background-color 0.15s ease;
+    }
+    .dark input[type=range]::-webkit-slider-thumb {
+      background: #22c55e;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+    }
+
+    /* Hide Number Input Spinner */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+  </style>
+</head>
+<body class="bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 min-h-screen font-sans transition-colors duration-200 flex flex-col justify-between items-center p-3 sm:p-6">
+
+  <!-- Main Application Container -->
+  <div class="w-full max-w-md bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-xl overflow-hidden flex flex-col justify-between my-auto relative">
+
+    <!-- Header Section -->
+    <div class="p-5 pb-3 border-b border-stone-100 dark:border-stone-800/80 bg-stone-50/50 dark:bg-stone-900/50 backdrop-blur">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-9 h-9 rounded-xl bg-brand-600 text-white flex items-center justify-center font-bold shadow-md shadow-brand-600/30">
+            <i class="fa-solid fa-fire-flame-curved text-lg"></i>
+          </div>
+          <div>
+            <h1 class="font-display text-2xl font-bold tracking-wider text-stone-900 dark:text-white leading-none">
+              FIRE<span class="text-brand-600 dark:text-brand-400">FLOW</span>
+            </h1>
+            <p class="text-[10px] font-semibold tracking-widest text-stone-400 uppercase">Fire Pump Calculator</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Dark Mode Toggle Button -->
+          <button id="themeToggle" class="w-9 h-9 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:text-brand-600 dark:hover:text-brand-400 flex items-center justify-center transition" title="Toggle Light/Dark Theme">
+            <i id="themeIcon" class="fa-solid fa-moon"></i>
+          </button>
+          
+          <!-- Info Modal Trigger -->
+          <button id="infoTrigger" class="w-9 h-9 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:text-brand-600 dark:hover:text-brand-400 flex items-center justify-center transition" title="Calculation Info">
+            <i class="fa-solid fa-circle-info"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Controls Row: Operation Mode & Unit Toggle -->
+      <div class="flex items-center justify-between gap-2 mt-4">
+        <div class="flex-1">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-1">Operation Type</label>
+          <select id="opType" class="w-full bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 text-xs font-semibold rounded-xl px-3 py-2 border border-stone-200 dark:border-stone-700 outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer">
+            <option value="hoseline">Hoseline / Handline</option>
+            <option value="masterstream">Master Stream</option>
+            <option value="standpipe">Standpipe System</option>
+            <option value="supply">Supply / Relay Line</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-1 text-right">Unit System</label>
+          <button id="unitToggle" class="bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 rounded-xl px-3 py-1.5 text-xs font-bold flex items-center gap-1.5 hover:border-brand-500 transition">
+            <span id="unitImperial" class="text-brand-600 dark:text-brand-400 font-extrabold">US Customary</span>
+            <span class="text-stone-300 dark:text-stone-600">|</span>
+            <span id="unitMetric" class="opacity-40">Metric</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inputs Container -->
+    <div class="p-5 space-y-5 overflow-y-auto max-h-[580px]">
+
+      <!-- 1. Required Nozzle Pressure (NP) -->
+      <div class="space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wide">Required Nozzle Pressure (NP)</span>
+          <span id="npDisplayVal" class="text-xs font-bold text-brand-600 dark:text-brand-400">75 PSI</span>
+        </div>
+        <div class="grid grid-cols-5 gap-1.5" id="npGroup">
+          <button data-value="0" class="np-btn py-2 text-xs font-bold rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-brand-500 transition">0</button>
+          <button data-value="50" class="np-btn py-2 text-xs font-bold rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-brand-500 transition">50</button>
+          <button data-value="75" class="np-btn btn-pill-active py-2 text-xs font-bold rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-brand-500 transition">75</button>
+          <button data-value="80" class="np-btn py-2 text-xs font-bold rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-brand-500 transition">80</button>
+          <button data-value="100" class="np-btn py-2 text-xs font-bold rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-brand-500 transition">100</button>
+        </div>
+      </div>
+
+      <!-- 2. Hose Diameter -->
+      <div class="space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wide">Hose Diameter</span>
+          <span id="diaDisplayVal" class="text-xs font-bold text-brand-600 dark:text-brand-400">1-3/4" (45mm)</span>
+        </div>
+        <div class="grid grid-cols-6 gap-1" id="diaGroup">
+          <button data-value="1.5" class="dia-btn py-2 text-[11px] font-bold rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-brand-500 transition">1½"</button>
+          <button data-value="1.75" class="dia-btn btn-pill-active py-2 text-[11px] font-bold rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-brand-500 transition">1¾"</button>
+          <button data-value="2.5" class="dia-btn py-2 text-[11px] font-bold rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-brand-500 transition">2½"</button>
+          <button data-value="3.0" class="dia-btn py-2 text-[11px] font-bold rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-brand-500 transition">3"</button>
+          <button data-value="4.0" class="dia-btn py-2 text-[11px] font-bold rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-brand-500 transition">4"</button>
+          <button data-value="5.0" class="dia-btn py-2 text-[11px] font-bold rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-brand-500 transition">5"</button>
+        </div>
+      </div>
+
+      <!-- 3. Hose Length -->
+      <div class="bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800 rounded-2xl p-3 space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wide">Hose Length</span>
+          <div class="flex items-center gap-1">
+            <input type="number" id="lengthInput" value="200" min="0" step="10" class="w-16 text-right font-bold text-stone-900 dark:text-white bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-2 py-0.5 text-sm outline-none focus:ring-1 focus:ring-brand-500">
+            <span class="text-xs font-bold text-stone-500 lengthUnitText">ft</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-1" id="lengthPresets">
+          <button data-len="50" class="len-preset text-[10px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:border-brand-500">50</button>
+          <button data-len="100" class="len-preset text-[10px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:border-brand-500">100</button>
+          <button data-len="150" class="len-preset text-[10px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:border-brand-500">150</button>
+          <button data-len="200" class="len-preset text-[10px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:border-brand-500">200</button>
+          <button data-len="300" class="len-preset text-[10px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:border-brand-500">300</button>
+          <button data-len="500" class="len-preset text-[10px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:border-brand-500">500</button>
+        </div>
+
+        <div class="flex items-center gap-2 pt-1">
+          <button id="lengthDec" class="w-7 h-7 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 font-bold hover:bg-brand-500 hover:text-white transition flex items-center justify-center">-</button>
+          <input type="range" id="lengthSlider" min="25" max="1000" step="25" value="200" class="w-full">
+          <button id="lengthInc" class="w-7 h-7 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 font-bold hover:bg-brand-500 hover:text-white transition flex items-center justify-center">+</button>
+        </div>
+      </div>
+
+      <!-- 4. Flow Rate -->
+      <div class="bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-800 rounded-2xl p-3 space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold text-stone-700 dark:text-stone-300 uppercase tracking-wide">Flow Rate</span>
+          <div class="flex items-center gap-1">
+            <input type="number" id="flowInput" value="150" min="0" step="5" class="w-20 text-right font-bold text-stone-900 dark:text-white bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-lg px-2 py-0.5 text-sm outline-none focus:ring-1 focus:ring-brand-500">
+            <span class="text-xs font-bold text-stone-500 flowUnitText">GPM</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-1" id="flowPresets">
+          <button data-flow="95" class="flow-preset text-[10px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:border-brand-500">95</button>
+          <button data-flow="150" class="flow-preset text-[10px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:border-brand-500">150</button>
+          <button data-flow="185" class="flow-preset text-[10px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:border-brand-500">185</button>
+          <button data-flow="250" class="flow-preset text-[10px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:border-brand-500">250</button>
+          <button data-flow="500" class="flow-preset text-[10px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:border-brand-500">500</button>
+          <button data-flow="1000" class="flow-preset text-[10px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:border-brand-500">1000</button>
+        </div>
+
+        <div class="flex items-center gap-2 pt-1">
+          <button id="flowDec" class="w-7 h-7 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 font-bold hover:bg-brand-500 hover:text-white transition flex items-center justify-center">-</button>
+          <input type="range" id="flowSlider" min="30" max="1250" step="10" value="150" class="w-full">
+          <button id="flowInc" class="w-7 h-7 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 font-bold hover:bg-brand-500 hover:text-white transition flex items-center justify-center">+</button>
+        </div>
+      </div>
+
+      <!-- 5. Elevation & Appliances Grid -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="space-y-1">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-500">Elevation</label>
+          <select id="elevationSelect" class="w-full bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 text-xs font-semibold rounded-xl px-2.5 py-2 border border-stone-200 dark:border-stone-700 outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer">
+            <option value="0">0 (Ground)</option>
+            <option value="1">1 Floor (+5 PSI)</option>
+            <option value="2">2 Floors (+10 PSI)</option>
+            <option value="3">3 Floors (+15 PSI)</option>
+            <option value="4">4 Floors (+20 PSI)</option>
+            <option value="5">5 Floors (+25 PSI)</option>
+            <option value="10">10 Floors (+50 PSI)</option>
+            <option value="-1">Basement (-5 PSI)</option>
+          </select>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-500">Appliance Loss</label>
+          <select id="applianceSelect" class="w-full bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 text-xs font-semibold rounded-xl px-2.5 py-2 border border-stone-200 dark:border-stone-700 outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer">
+            <option value="auto">Auto Rule</option>
+            <option value="0">None (0 PSI)</option>
+            <option value="10">Single Appliance (10 PSI)</option>
+            <option value="25">Master Stream (25 PSI)</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Output Display Card -->
+    <div class="p-5 pt-3 bg-stone-50/80 dark:bg-stone-900/80 border-t border-stone-200 dark:border-stone-800">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-extrabold uppercase tracking-widest text-stone-500 dark:text-stone-400">Pump Discharge Pressure</span>
+        <div id="statusBadge" class="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-brand-100 text-brand-700 dark:bg-brand-900/50 dark:text-brand-300 border border-brand-300 dark:border-brand-700">
+          <i class="fa-solid fa-circle-check"></i>
+          <span id="statusText">Optimal Flow</span>
+        </div>
+      </div>
+
+      <div class="bg-gradient-to-br from-brand-600 to-brand-700 dark:from-brand-600 dark:to-brand-800 rounded-2xl p-4 text-white shadow-lg shadow-brand-600/25 relative overflow-hidden">
+        <div class="flex items-baseline justify-between">
+          <div class="flex items-baseline gap-2">
+            <span id="pdpResult" class="font-display text-5xl sm:text-6xl font-extrabold tracking-tight">116</span>
+            <span id="pdpUnit" class="text-lg font-bold text-brand-100">PSI</span>
+          </div>
+
+          <div class="text-right">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-brand-200">Friction Loss</div>
+            <div id="flVal" class="text-lg font-bold font-mono">41.0 PSI</div>
+          </div>
+        </div>
+
+        <div class="mt-3 pt-2.5 border-t border-brand-500/40 grid grid-cols-4 gap-1 text-center">
+          <div>
+            <div class="text-[9px] uppercase font-bold text-brand-200">NP</div>
+            <div id="breakNP" class="text-xs font-bold font-mono">75</div>
+          </div>
+          <div>
+            <div class="text-[9px] uppercase font-bold text-brand-200">FL</div>
+            <div id="breakFL" class="text-xs font-bold font-mono">41.0</div>
+          </div>
+          <div>
+            <div class="text-[9px] uppercase font-bold text-brand-200">EP</div>
+            <div id="breakEP" class="text-xs font-bold font-mono">0.0</div>
+          </div>
+          <div>
+            <div class="text-[9px] uppercase font-bold text-brand-200">AL</div>
+            <div id="breakAL" class="text-xs font-bold font-mono">0.0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formula Breakdown Modal -->
+    <div id="infoModal" class="hidden absolute inset-0 bg-stone-900/80 backdrop-blur-sm z-30 p-5 flex flex-col justify-center items-center">
+      <div class="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-2">
+          <h3 class="text-brand-600 dark:text-brand-400 font-bold text-base flex items-center gap-2">
+            <i class="fa-solid fa-calculator"></i> Hydraulics Formulas
+          </h3>
+          <button id="closeModal" class="text-stone-400 hover:text-stone-600 dark:hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="space-y-3 text-xs text-stone-600 dark:text-stone-300">
+          <div>
+            <strong class="text-stone-900 dark:text-white block mb-0.5">Engine PDP Formula:</strong>
+            <code class="bg-stone-100 dark:bg-stone-800 px-2 py-1 rounded text-brand-600 dark:text-brand-400 font-mono font-bold block">PDP = NP + FL ± EP + AL</code>
+          </div>
+
+          <div>
+            <strong class="text-stone-900 dark:text-white block mb-0.5">Friction Loss Formula:</strong>
+            <code class="bg-stone-100 dark:bg-stone-800 px-2 py-1 rounded font-mono block">FL = C × (Q/100)² × (L/100)</code>
+          </div>
+
+          <div>
+            <strong class="text-stone-900 dark:text-white block mb-0.5">Hose Coefficients (C):</strong>
+            <ul class="grid grid-cols-2 gap-1 font-mono text-[11px] text-stone-500">
+              <li>1½": C = 24</li>
+              <li>1¾": C = 15.5</li>
+              <li>2½": C = 2</li>
+              <li>3": C = 0.8</li>
+              <li>4": C = 0.2</li>
+              <li>5": C = 0.08</li>
+            </ul>
+          </div>
+        </div>
+
+        <button id="closeModalBtn" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 rounded-xl transition">
+          Close
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let isDarkMode = false;
+    let isMetric = false;
+
+    let selectedNP = 75;
+    let selectedDia = 1.75;
+    let hoseLength = 200;
+    let flowRate = 150;
+    let elevationFloors = 0;
+    let applianceSetting = 'auto';
+
+    const HOSE_C_FACTORS = {
+      1.5: 24,
+      1.75: 15.5,
+      2.5: 2,
+      3.0: 0.8,
+      4.0: 0.2,
+      5.0: 0.08
+    };
+
+    const PSI_TO_BAR = 0.0689476;
+    const GPM_TO_LPM = 3.78541;
+    const FT_TO_M = 0.3048;
+
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    const unitToggle = document.getElementById('unitToggle');
+    const unitImperial = document.getElementById('unitImperial');
+    const unitMetric = document.getElementById('unitMetric');
+
+    const npDisplayVal = document.getElementById('npDisplayVal');
+    const diaDisplayVal = document.getElementById('diaDisplayVal');
+
+    const lengthInput = document.getElementById('lengthInput');
+    const lengthSlider = document.getElementById('lengthSlider');
+    const lengthDec = document.getElementById('lengthDec');
+    const lengthInc = document.getElementById('lengthInc');
+
+    const flowInput = document.getElementById('flowInput');
+    const flowSlider = document.getElementById('flowSlider');
+    const flowDec = document.getElementById('flowDec');
+    const flowInc = document.getElementById('flowInc');
+
+    const elevationSelect = document.getElementById('elevationSelect');
+    const applianceSelect = document.getElementById('applianceSelect');
+
+    const pdpResult = document.getElementById('pdpResult');
+    const pdpUnit = document.getElementById('pdpUnit');
+    const flVal = document.getElementById('flVal');
+
+    const breakNP = document.getElementById('breakNP');
+    const breakFL = document.getElementById('breakFL');
+    const breakEP = document.getElementById('breakEP');
+    const breakAL = document.getElementById('breakAL');
+
+    const statusBadge = document.getElementById('statusBadge');
+    const statusText = document.getElementById('statusText');
+
+    const infoTrigger = document.getElementById('infoTrigger');
+    const infoModal = document.getElementById('infoModal');
+    const closeModal = document.getElementById('closeModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+
+    themeToggle.addEventListener('click', () => {
+      isDarkMode = !isDarkMode;
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark');
+        themeIcon.classList.replace('fa-moon', 'fa-sun');
+      } else {
+        document.documentElement.classList.remove('dark');
+        themeIcon.classList.replace('fa-sun', 'fa-moon');
+      }
+    });
+
+    function setupPillGroup(containerId, activeCallback) {
+      const btns = document.querySelectorAll(`#${containerId} button`);
+      btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          btns.forEach(b => b.classList.remove('btn-selected', 'btn-pill-active'));
+          btn.classList.add('btn-pill-active');
+          const val = parseFloat(btn.getAttribute('data-value'));
+          activeCallback(val);
+          calculatePDP();
+        });
+      });
+    }
+
+    setupPillGroup('npGroup', (val) => { selectedNP = val; });
+    setupPillGroup('diaGroup', (val) => { selectedDia = val; });
+
+    unitToggle.addEventListener('click', () => {
+      isMetric = !isMetric;
+      if (isMetric) {
+        unitImperial.classList.add('opacity-40');
+        unitImperial.classList.remove('text-brand-600', 'dark:text-brand-400', 'font-extrabold');
+        unitMetric.classList.remove('opacity-40');
+        unitMetric.classList.add('text-brand-600', 'dark:text-brand-400', 'font-extrabold');
+        
+        document.querySelectorAll('.lengthUnitText').forEach(el => el.textContent = 'm');
+        document.querySelectorAll('.flowUnitText').forEach(el => el.textContent = 'L/min');
+        pdpUnit.textContent = 'Bar';
+      } else {
+        unitMetric.classList.add('opacity-40');
+        unitMetric.classList.remove('text-brand-600', 'dark:text-brand-400', 'font-extrabold');
+        unitImperial.classList.remove('opacity-40');
+        unitImperial.classList.add('text-brand-600', 'dark:text-brand-400', 'font-extrabold');
+        
+        document.querySelectorAll('.lengthUnitText').forEach(el => el.textContent = 'ft');
+        document.querySelectorAll('.flowUnitText').forEach(el => el.textContent = 'GPM');
+        pdpUnit.textContent = 'PSI';
+      }
+      calculatePDP();
+    });
+
+    function updateLength(val) {
+      hoseLength = Math.max(0, val);
+      lengthInput.value = hoseLength;
+      lengthSlider.value = hoseLength;
+      calculatePDP();
+    }
+
+    lengthSlider.addEventListener('input', (e) => updateLength(parseFloat(e.target.value)));
+    lengthInput.addEventListener('input', (e) => updateLength(parseFloat(e.target.value) || 0));
+    lengthDec.addEventListener('click', () => updateLength(hoseLength - 25));
+    lengthInc.addEventListener('click', () => updateLength(hoseLength + 25));
+
+    document.querySelectorAll('#lengthPresets button').forEach(btn => {
+      btn.addEventListener('click', () => updateLength(parseFloat(btn.getAttribute('data-len'))));
+    });
+
+    function updateFlow(val) {
+      flowRate = Math.max(0, val);
+      flowInput.value = flowRate;
+      flowSlider.value = flowRate;
+      calculatePDP();
+    }
+
+    flowSlider.addEventListener('input', (e) => updateFlow(parseFloat(e.target.value)));
+    flowInput.addEventListener('input', (e) => updateFlow(parseFloat(e.target.value) || 0));
+    flowDec.addEventListener('click', () => updateFlow(flowRate - 10));
+    flowInc.addEventListener('click', () => updateFlow(flowRate + 10));
+
+    document.querySelectorAll('#flowPresets button').forEach(btn => {
+      btn.addEventListener('click', () => updateFlow(parseFloat(btn.getAttribute('data-flow'))));
+    });
+
+    elevationSelect.addEventListener('change', (e) => {
+      elevationFloors = parseFloat(e.target.value);
+      calculatePDP();
+    });
+
+    applianceSelect.addEventListener('change', (e) => {
+      applianceSetting = e.target.value;
+      calculatePDP();
+    });
+
+    function calculatePDP() {
+      let lenFt = isMetric ? hoseLength / FT_TO_M : hoseLength;
+      let flowGPM = isMetric ? flowRate / GPM_TO_LPM : flowRate;
+
+      let C = HOSE_C_FACTORS[selectedDia] || 2;
+      let flPSI = C * Math.pow(flowGPM / 100, 2) * (lenFt / 100);
+
+      let npPSI = selectedNP;
+      let epPSI = elevationFloors * 5;
+
+      let alPSI = 0;
+      if (applianceSetting === 'auto') {
+        if (flowGPM > 350) alPSI = 10;
+        if (selectedDia >= 4.0 || flowGPM >= 500) alPSI = 25;
+      } else {
+        alPSI = parseFloat(applianceSetting);
+      }
+
+      let totalPdpPSI = npPSI + flPSI + epPSI + alPSI;
+
+      if (isMetric) {
+        let pdpBar = totalPdpPSI * PSI_TO_BAR;
+        pdpResult.textContent = pdpBar.toFixed(1);
+        flVal.textContent = (flPSI * PSI_TO_BAR).toFixed(2) + ' Bar';
+
+        npDisplayVal.textContent = (npPSI * PSI_TO_BAR).toFixed(1) + ' Bar';
+        breakNP.textContent = (npPSI * PSI_TO_BAR).toFixed(1);
+        breakFL.textContent = (flPSI * PSI_TO_BAR).toFixed(1);
+        breakEP.textContent = (epPSI * PSI_TO_BAR).toFixed(1);
+        breakAL.textContent = (alPSI * PSI_TO_BAR).toFixed(1);
+      } else {
+        pdpResult.textContent = Math.round(totalPdpPSI);
+        flVal.textContent = flPSI.toFixed(1) + ' PSI';
+
+        npDisplayVal.textContent = npPSI + ' PSI';
+        breakNP.textContent = npPSI;
+        breakFL.textContent = flPSI.toFixed(1);
+        breakEP.textContent = epPSI.toFixed(1);
+        breakAL.textContent = alPSI.toFixed(1);
+      }
+
+      diaDisplayVal.textContent = getDiaText(selectedDia);
+      checkFlowStatus(selectedDia, flowGPM, totalPdpPSI);
+    }
+
+    function getDiaText(dia) {
+      switch(dia) {
+        case 1.5: return '1½" (38mm)';
+        case 1.75: return '1¾" (45mm)';
+        case 2.5: return '2½" (65mm)';
+        case 3.0: return '3" (75mm)';
+        case 4.0: return '4" (100mm)';
+        case 5.0: return '5" (125mm)';
+        default: return dia + '"';
+      }
+    }
+
+    function checkFlowStatus(dia, gpm, pdp) {
+      let maxRecommendedGPM = 0;
+      if (dia === 1.5) maxRecommendedGPM = 125;
+      else if (dia === 1.75) maxRecommendedGPM = 200;
+      else if (dia === 2.5) maxRecommendedGPM = 300;
+      else if (dia === 3.0) maxRecommendedGPM = 500;
+      else if (dia === 4.0) maxRecommendedGPM = 1000;
+      else if (dia === 5.0) maxRecommendedGPM = 1500;
+
+      if (gpm > maxRecommendedGPM) {
+        statusBadge.className = 'flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 border border-amber-300 dark:border-amber-700';
+        statusText.textContent = 'High Friction Loss';
+      } else if (pdp > 250) {
+        statusBadge.className = 'flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300 border border-red-300 dark:border-red-700';
+        statusText.textContent = 'Exceeds Hose Limit';
+      } else {
+        statusBadge.className = 'flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-brand-100 text-brand-700 dark:bg-brand-900/50 dark:text-brand-300 border border-brand-300 dark:border-brand-700';
+        statusText.textContent = 'Optimal Flow';
+      }
+    }
+
+    infoTrigger.addEventListener('click', () => infoModal.classList.remove('hidden'));
+    closeModal.addEventListener('click', () => infoModal.classList.add('hidden'));
+    closeModalBtn.addEventListener('click', () => infoModal.classList.add('hidden'));
+
+    calculatePDP();
+  </script>
+</body>
+</html>
